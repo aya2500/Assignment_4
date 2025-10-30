@@ -26,7 +26,7 @@
 
 class EnvironmentSettings:
     def __init__(self):
-        base = r"D:\College\Level 4\Semester 1\Image Processing\Assignments_Solve\VideoX\SeqTrack"
+        base = r"D:\Assignment_3\SeqTrack"
 
         self.workspace_dir = base  # Base directory for saving network checkpoints.
         self.tensorboard_dir = rf"{base}\tensorboard"  # Directory for tensorboard files.

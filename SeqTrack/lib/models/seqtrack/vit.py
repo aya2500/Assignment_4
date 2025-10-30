@@ -392,7 +392,13 @@ def load_pretrained(model, pretrain_type='default', cfg=None, num_classes=1000, 
         print("Pretrained model URL is invalid, using random initialization.")
         return
 
-    state_dict = model_zoo.load_url(cfg['url'], progress=False, map_location='cpu')
+# Load pretrained weights onto GPU if available, otherwise load on CPU.
+    if torch.cuda.is_available():
+        state_dict = model_zoo.load_url(cfg['url'], progress=False, map_location=lambda storage, loc: storage.cuda())
+    else:
+        state_dict = model_zoo.load_url(cfg['url'], progress=False, map_location='cpu')
+    
+
     if pretrain_type == 'mae':
         state_dict = state_dict['model']
 

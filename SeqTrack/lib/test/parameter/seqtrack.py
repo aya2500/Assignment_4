@@ -21,10 +21,14 @@ def parameters(yaml_name: str):
     params.search_factor = cfg.TEST.SEARCH_FACTOR
     params.search_size = cfg.TEST.SEARCH_SIZE
 
-    # Network checkpoint path
-    params.checkpoint = os.path.join(save_dir, "checkpoints/train/seqtrack/%s/SEQTRACK_ep%04d.pth.tar" %
-                                     (yaml_name, cfg.TEST.EPOCH))
+    # Network checkpoint path (default: last epoch)
+    params.checkpoint = f"https://huggingface.co/ayamohamed2500/seqtrack-checkpoints/resolve/main/phase_1/SEQTRACK_ep{cfg.TEST.EPOCH:04d}.pth.tar"
 
+    # Also expose a list of checkpoints for all epochs from 1..EPOCH so evaluation can iterate over them.
+    params.checkpoints = [
+        f"https://huggingface.co/ayamohamed2500/seqtrack-checkpoints/resolve/main/phase_1/SEQTRACK_ep{epoch:04d}.pth.tar"
+        for epoch in range(1, cfg.TEST.EPOCH + 1)
+    ]
     # whether to save boxes from all queries
     params.save_all_boxes = False
 

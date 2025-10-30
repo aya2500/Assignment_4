@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 
 
+
 def trackerlist(name: str, parameter_name: str, dataset_name: str, run_ids = None, display_name: str = None,
                 result_only=False):
     """Generate list of trackers.
@@ -167,15 +168,8 @@ class Tracker:
         params.param_name = self.parameter_name
         # self._init_visdom(visdom_info, debug_)
 
-        multiobj_mode = getattr(params, 'multiobj_mode', getattr(self.tracker_class, 'multiobj_mode', 'default'))
-
-        if multiobj_mode == 'default':
-            tracker = self.create_tracker(params)
-
-        elif multiobj_mode == 'parallel':
-            tracker = MultiObjectWrapper(self.tracker_class, params, self.visdom, fast_load=True)
-        else:
-            raise ValueError('Unknown multi object mode {}'.format(multiobj_mode))
+        # Create tracker instance
+        tracker = self.create_tracker(params)
 
         assert os.path.isfile(videofilepath), "Invalid param {}".format(videofilepath)
         ", videofilepath must be a valid videofile"
@@ -275,6 +269,17 @@ class Tracker:
         """Get parameters."""
         param_module = importlib.import_module('lib.test.parameter.{}'.format(self.name))
         params = param_module.parameters(self.parameter_name)
+        # If the parameter module exposes multiple checkpoints (params.checkpoints)
+        # and this Tracker has a numeric run_id, select the corresponding checkpoint
+        # (run_id is 1-based index into the checkpoints list).
+        if hasattr(params, 'checkpoints') and isinstance(params.checkpoints, (list, tuple)) and self.run_id is not None:
+            idx = int(self.run_id) - 1
+            if 0 <= idx < len(params.checkpoints):
+                params.checkpoint = params.checkpoints[idx]
+                print(f"Selected checkpoint {self.run_id:03d}: {params.checkpoint}")
+            else:
+                # If run_id out of range, keep default checkpoint and warn
+                print(f"Warning: run_id {self.run_id} out of range for available checkpoints (1..{len(params.checkpoints)})")
         return params
 
     def _read_image(self, image_file: str):

@@ -1,12 +1,20 @@
 import os
 import sys
 import argparse
+import torch
+import importlib
 
 env_path = os.path.join(os.path.dirname(__file__), '../..')
 if env_path not in sys.path:
     sys.path.append(env_path)
 
-from lib.test.evaluation import get_dataset
+# Prefer GPU when available; fall back to CPU otherwise. This only changes device selection.
+if torch.cuda.is_available():
+    # Use CUDA as the default tensor type so modules created without explicit device
+    # will be placed on GPU by default when possible.
+    torch.set_default_tensor_type(torch.cuda.FloatTensor)
+
+from lib.test.evaluation.datasets import get_dataset
 from lib.test.evaluation.running import run_dataset
 from lib.test.evaluation.tracker import Tracker
 
@@ -28,7 +36,21 @@ def run_tracker(tracker_name, tracker_param, run_id=None, dataset_name='otb', se
     if sequence is not None:
         dataset = [dataset[sequence]]
 
-    trackers = [Tracker(tracker_name, tracker_param, dataset_name, run_id)]
+    # If parameter module exposes multiple checkpoints and no run_id is provided,
+    # create one Tracker per checkpoint (run_id is 1-based index).
+    try:
+        param_module = importlib.import_module(f'lib.test.parameter.{tracker_param}')
+        params = param_module.parameters(tracker_param)
+    except Exception:
+        params = None
+
+    trackers = []
+    if params is not None and hasattr(params, 'checkpoints') and run_id is None:
+        num_ckpts = len(params.checkpoints)
+        for i in range(1, num_ckpts + 1):
+            trackers.append(Tracker(tracker_name, tracker_param, dataset_name, i))
+    else:
+        trackers = [Tracker(tracker_name, tracker_param, dataset_name, run_id)]
 
     run_dataset(dataset, trackers, debug, threads, num_gpus=num_gpus)
 

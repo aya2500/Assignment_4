@@ -6,6 +6,7 @@ from lib.utils.box_ops import box_xywh_to_xyxy, box_xyxy_to_cxcywh
 from lib.models.seqtrack import build_seqtrack
 from lib.test.tracker.seqtrack_utils import Preprocessor
 from lib.utils.box_ops import clip_box
+from lib.test.tracker.checkpoint_utils import load_checkpoint_from_url, load_checkpoint
 import numpy as np
 
 
@@ -13,7 +14,13 @@ class SEQTRACK(BaseTracker):
     def __init__(self, params, dataset_name):
         super(SEQTRACK, self).__init__(params)
         network = build_seqtrack(params.cfg)
-        network.load_state_dict(torch.load(self.params.checkpoint, map_location='cpu')['net'], strict=True)
+        if self.params.checkpoint.startswith('http'):
+            # Load checkpoint from URL
+            checkpoint = load_checkpoint_from_url(self.params.checkpoint)
+        else:
+            # Load local checkpoint (prefer GPU when available)
+            checkpoint = load_checkpoint(self.params.checkpoint)
+        network.load_state_dict(checkpoint['net'], strict=True)
         self.cfg = params.cfg
         self.seq_format = self.cfg.DATA.SEQ_FORMAT
         self.num_template = self.cfg.TEST.NUM_TEMPLATES

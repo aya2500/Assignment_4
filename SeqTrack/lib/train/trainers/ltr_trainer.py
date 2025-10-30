@@ -434,17 +434,17 @@ class LTRTrainer(BaseTrainer):
                     if not token:
                         print("⚠️ Hugging Face token not found. Run `huggingface-cli login` first.")
                     else:
-                        # try:
-                        #     upload_file(
-                        #         path_or_fileobj=ckpt_path,
-                        #         path_in_repo=f"{self.phase_name}/{os.path.basename(ckpt_path)}",
-                        #         repo_id=self.repo_id,
-                        #         repo_type="model",
-                        #         token=token,
-                        #     )
-                        #     print(f"Uploaded checkpoint to Hugging Face: {self.repo_id}/{self.phase_name}")
-                        # except Exception as e:
-                        #     print("⚠️ Failed uploading checkpoint to Hugging Face:", e)
+                        try:
+                            upload_file(
+                                path_or_fileobj=ckpt_path,
+                                path_in_repo=f"{self.phase_name}/{os.path.basename(ckpt_path)}",
+                                repo_id=self.repo_id,
+                                repo_type="model",
+                                token=token,
+                            )
+                            print(f"Uploaded checkpoint to Hugging Face: {self.repo_id}/{self.phase_name}")
+                        except Exception as e:
+                            print("⚠️ Failed uploading checkpoint to Hugging Face:", e)
 
                         # Upload IoU plot
                         if iou_fig_path:
